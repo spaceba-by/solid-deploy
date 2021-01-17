@@ -1,0 +1,32 @@
+name: build
+
+on:
+  [push, pull_request]
+
+jobs:
+  build_container:
+    name: docker container
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: construct package version tag
+        run: |
+          PACKAGE_ID=ghcr.io/${{ github.repository }}
+          BRANCH=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          SHORT_SHA=${GITHUB_SHA::7}
+          EPOCH=$(date +%s)
+          PACKAGE_VERSION=${BRANCH}-${SHORT_SHA}-${EPOCH}
+          PACKAGE_TAG=${PACKAGE_ID}:${PACKAGE_VERSION}
+
+          echo "PACKAGE_TAG=${PACKAGE_TAG}" >> $GITHUB_ENV
+
+      - name: docker build
+        run:  DOCKER_BUILDKIT=1 docker build . --file Dockerfile --tag $PACKAGE_TAG
+
+      - name: publish package
+        if: github.event_name == 'push' && github.repository_owner == 'spaceba-by'
+        run: |
+          echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push $PACKAGE_TAG
