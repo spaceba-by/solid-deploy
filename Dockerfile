@@ -1,5 +1,5 @@
 FROM node:fermium-alpine as base
-LABEL org.opencontainers.image.source https://github.com/em-schmidt/solid-deploy
+LABEL org.opencontainers.image.source https://github.com/spaceba-by/solid-deploy
 
 RUN adduser -D solid -h /solid
 WORKDIR /solid
